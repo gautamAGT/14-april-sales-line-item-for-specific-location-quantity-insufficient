@@ -19,9 +19,11 @@ codeunit 50201 "SalesLineEventHandler"
     begin
         ItemLedgerEntry.SetRange("Item No.", ItemNo);
         ItemLedgerEntry.SetRange("Location Code", LocationCode);
-        if ItemLedgerEntry.CalcSums("Remaining Quantity") then
-            exit(ItemLedgerEntry."Remaining Quantity")
-        else
+
+        if ItemLedgerEntry.CalcSums("Remaining Quantity") then begin
+            Message('Available quantity for item %1 at location %2: %3', ItemNo, LocationCode, ItemLedgerEntry."Remaining Quantity");
+            exit(ItemLedgerEntry."Remaining Quantity");
+        end else
             exit(0);
     end;
 
@@ -49,22 +51,18 @@ codeunit 50201 "SalesLineEventHandler"
         ItemJournalLine.Validate("Line No.", NextLineNo);
         ItemJournalLine.Validate("Item No.", SalesLine."No.");
         ItemJournalLine."Location Code" := SalesLine."Location Code";
-        ItemJournalLine.Validate("Quantity", RemainingQty);
+        ItemJournalLine."Quantity" := RemainingQty;
         ItemJournalLine.Validate("Entry Type", ItemJournalLine."Entry Type"::"Positive Adjmt.");
         ItemJournalLine.Validate("Posting Date", Today);
         ItemJournalLine.Validate("Document No.", 'ADJ-' + Format(Today, 0, '<Day,2>/<Month,2>/<Year4>'));
 
         ItemJournalLine.Insert(true);
-
-
         ItemJournalPost.Run(ItemJournalLine);
     end;
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Item Jnl.-Post", 'OnBeforeCode', '', false, false)]
-    local procedure OnBeforeCode(var ItemJournalLine: Record "Item Journal Line"; var HideDialog: Boolean; var SuppressCommit: Boolean;
-    var IsHandled: Boolean)
+    local procedure OnBeforeCode(var ItemJournalLine: Record "Item Journal Line"; var HideDialog: Boolean; var SuppressCommit: Boolean; var IsHandled: Boolean)
     begin
-
         HideDialog := true;
     end;
 }
